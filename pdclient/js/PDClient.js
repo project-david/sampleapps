@@ -8,6 +8,7 @@ class PDClient {
         this.appId = process.env.PARTNER_APP_ID;
         this.superOrgId = process.env.PARTNER_SUPER_ORG_ID;
         this.headers = null;
+        this.showHeaders = false;
         this.inited = false;
     }
     init() {
@@ -29,43 +30,47 @@ class PDClient {
             });
     }
     listCustomers(callback, options) {
+        let first = false;
         const wc = []; // wc => where clause
         if (options.id) wc.push(`id=${options.id}`);
         if (options.externalId) wc.push(`externalId=${options.externalId}`);
 
         const url = `${process.env.PD_BASE_URL}/entities/Customer` + (wc.length ? '?' + wc.join('&') : '');
-        this.invoke(() => syncGet(url, this.headers, callback));
+        this.invoke(() => syncGet(url, this.headers, callback, first, this.showHeaders));
     }
 
     listClients(callback, options) {
+        let first = false;
         const wc = []; // wc => where clause
-        if (options.id) wc.push(`id=${options.id}`);
+        if (options.id) { wc.push(`id=${options.id}`); first = true; }
         if (options.customer) wc.push(`customer.id=${options.customer}`);
         if (options.externalId) wc.push(`externalId=${options.externalId}`);
 
         const url = `${process.env.PD_BASE_URL}/entities/Client` + (wc.length ? '?' + wc.join('&') : '');
-        this.invoke(() => syncGet(url, this.headers, callback));
+        this.invoke(() => syncGet(url, this.headers, callback, first, this.showHeaders));
     }
     listMatters(callback, options) {
+        let first = false;
         const wc = []; // wc => where clause
-        if (options.id) wc.push(`id=${options.id}`);
+        if (options.id) { wc.push(`id=${options.id}`); first = true; }
         if (options.client) wc.push(`client.id=${options.client}`);
         if (options.customer) wc.push(`client.customer.id=${options.customer}`);
         if (options.externalId) wc.push(`externalId=${options.externalId}`);
 
         const url = `${process.env.PD_BASE_URL}/entities/Matter` + (wc.length ? '?' + wc.join('&') : '');
-        this.invoke(() => syncGet(url, this.headers, callback));
+        this.invoke(() => syncGet(url, this.headers, callback, first, this.showHeaders));
     }
 
     listInvoices(callback, options) {
+        let first = false;
         const wc = []; // wc => where clause
-        if (options.id) wc.push(`id=${options.id}`);
+        if (options.id) { wc.push(`id=${options.id}`); first = true; }
         if (options.client) wc.push(`client.id=${options.client}`);
         if (options.customer) wc.push(`client.customer.id=${options.customer}`);
         if (options.externalId) wc.push(`externalId=${options.externalId}`);
 
         const url = `${process.env.PD_BASE_URL}/entities/Invoice` + (wc.length ? '?' + wc.join('&') : '');
-        this.invoke(() => syncGet(url, this.headers, callback));
+        this.invoke(() => syncGet(url, this.headers, callback, first, this.showHeaders));
     }
 
     listPaylinks(callback, options) {
@@ -82,53 +87,79 @@ class PDClient {
         if (options.externalId) wc.push(`externalId=${options.externalId}`);
 
         const url = `${process.env.PD_BASE_URL}/entities/Paylink` + (wc.length ? '?' + wc.join('&') : '');
-        this.invoke(() => syncGet(url, this.headers, callback, first));
+        this.invoke(() => syncGet(url, this.headers, callback, first, this.showHeaders));
     }
 
     createCustomer(callback, options) {
         const body = options2Body(callback, options, ['name'], ['externalId']);
         if (!body) return;
-        this.invoke(() =>  syncPost(`${process.env.PD_BASE_URL}/entities/Customer`, this.headers, body, callback));
+        body.appId = this.appId;
+        this.invoke(() =>  syncPost(`${process.env.PD_BASE_URL}/entities/Customer`, this.headers, body, callback, this.showHeaders));
     }
 
     createClient(callback, options) {
         const body = options2Body(callback, options, ['firstName', 'customer'], ['lastName', 'email', 'externalId']);
         if (!body) return;
-        this.invoke(() =>  syncPost(`${process.env.PD_BASE_URL}/entities/Client`, this.headers, body, callback));
+        this.invoke(() =>  syncPost(`${process.env.PD_BASE_URL}/entities/Client`, this.headers, body, callback, this.showHeaders));
     }
 
     createMatter(callback, options) {
         const body = options2Body(callback, options, ['name', 'client'], ['externalId']);
         if (!body) return;
-        this.invoke(() =>  syncPost(`${process.env.PD_BASE_URL}/entities/Matter`, this.headers, body, callback));
+        this.invoke(() =>  syncPost(`${process.env.PD_BASE_URL}/entities/Matter`, this.headers, body, callback, this.showHeaders));
     }
 
     createInvoice(callback, options) {
         const body = options2Body(callback, options, ['name', 'client'], ['matter', 'externalId']);
         if (!body) return;
-        this.invoke(() =>  syncPost(`${process.env.PD_BASE_URL}/entities/Invoice`, this.headers, body, callback));
+        this.invoke(() =>  syncPost(`${process.env.PD_BASE_URL}/entities/Invoice`, this.headers, body, callback, this.showHeaders));
     }
 
     createPaylink(callback, options) {
         const body = options2Body(callback, options, ['client', 'customer', 'amount'],
             ['trustAmount', 'matter', 'externalId', 'paymentTitle', 'paymentDescription']);
         if (!body) return;
-        this.invoke(() =>  syncPost(`${process.env.PD_BASE_URL}/entities/Paylink`, this.headers, body, callback));
+        this.invoke(() =>  syncPost(`${process.env.PD_BASE_URL}/entities/Paylink`, this.headers, body, callback, this.showHeaders));
     }
     invoke(fn) {
         this.inited ? fn() : this.init().then(response => fn());
     }
 }
 
-function syncGet(url, headers, callback, first) {
+function syncGet(url, headers, callback, first, showHeaders) {
+    if (showHeaders) {
+        console.log('\x1b[32m%s\x1b[0m', `> GET ${url}`);
+        console.log('\x1b[32m%s\x1b[0m', Object.keys(headers).map(k => `> ${k}: ${headers[k]}`).join('\n'));
+    }
     fetch(url, { method: 'GET', headers })
-        .then(res => res.json())
+        .then(res => { 
+            if (showHeaders) {
+                console.log();
+                console.log('\x1b[35m%s\x1b[0m', `< ${res.status} ${res.statusText}`);
+                const headers = res.headers.raw();
+                console.log('\x1b[35m%s\x1b[0m', Object.keys(headers).map(k => `< ${k}=${headers[k]}`).join('\n'));
+            }
+            return res.json();
+        })
         .then(json => json.result ? callback(null, first ? json.result.records[0] : json.result) : callback(null, `PDError:: ${json.error}`))
         .catch(error => callback(null, error));
 }
-function syncPost(url, headers, body, callback) {
+function syncPost(url, headers, body, callback, showHeaders) {
+    if (showHeaders) {
+        console.log('\x1b[32m%s\x1b[0m', `> POST ${url}`);
+        console.log('\x1b[32m%s\x1b[0m', Object.keys(headers).map(k => `> ${k}: ${headers[k]}`).join('\n'));
+        console.log('\x1b[32m%s\x1b[0m', JSON.stringify(body, null, 2));
+    }
     fetch(url, { method: 'POST', headers, body: JSON.stringify(body) })
-        .then(res => res.json())
+        .then(res => {
+            if (showHeaders) {
+                console.log();
+                console.log('\x1b[35m%s\x1b[0m', `< ${res.status} ${res.statusText}`);
+                const headers = res.headers.raw();
+                console.log('\x1b[35m%s\x1b[0m', Object.keys(headers).map(k => `< ${k}=${headers[k]}`).join('\n'));
+            }
+            return res.json();
+        })
         .then(json => json.result ? callback(null, json.result) : callback(null, `PDError:: ${json.error}`))
         .catch(error => callback(null, error));
 }
