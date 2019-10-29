@@ -22,6 +22,16 @@ program
         program.outputHelp();
         callback(null);
     });
+
+program
+    .command('show-headers <onOff>') // don't exit on help
+    .description(`Show request and response headers`)
+    .action((onOff) => {
+        pdClient.showHeaders = onOff.toUpperCase() === 'ON';
+        const msg = 'show-headers: ' + pdClient.showHeaders;
+        callback(null, msg);
+    });
+
 /*
 const sleep = (milliseconds) => {
     return new Promise(resolve => setTimeout(resolve, milliseconds))
@@ -153,8 +163,26 @@ program
     });
 
 function myEval(input, ctx, filename, cb) {
+    if (!input.trim()) {
+        cb(null, undefined);
+        return;
+    }
     let terms = input.match(/[0-9a-zA-Z-]+|"(?:\\"|[^"])+"/g); // treat double-quoted phrase as single term
     terms = terms.map(term => term.replace(/\"/g, '')); // get rid of double-quotes
+    const shortHelpPos = terms.indexOf('-h');
+    if (shortHelpPos !== -1) terms.splice(shortHelpPos, 1);
+    const longHelpPos = terms.indexOf('--help');
+    if (longHelpPos !== -1) terms.splice(longHelpPos, 1);
+
+    if (shortHelpPos !== -1 || longHelpPos !== -1) {
+        if (terms.length === 0) {
+            cb(null, 'Try: help');
+            return;
+        } else {
+            terms.unshift('help');
+        }
+    }
+
     terms = ['ignore', 'pdclient>'].concat(terms); // to keep commander happy
 
     callback = function(arg1, arg2) { // save the callback for use in action handlers
