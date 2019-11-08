@@ -24,28 +24,14 @@ program
     });
 
 program
-    .command('show-headers <onOff>') // don't exit on help
-    .description(`Show request and response headers`)
+    .command('show-messages <on|off>') // don't exit on help
+    .description(`Show request and response messages`)
     .action((onOff) => {
-        pdClient.showHeaders = onOff.toUpperCase() === 'ON';
-        const msg = 'show-headers: ' + pdClient.showHeaders;
+        pdClient.showMessages = onOff.toUpperCase() === 'ON';
+        const msg = 'show-messages: ' + pdClient.showMessages;
         callback(null, msg);
     });
 
-/*
-const sleep = (milliseconds) => {
-    return new Promise(resolve => setTimeout(resolve, milliseconds))
-}
-
-program
-    .command('sleep <secs>')
-    .description('sleeps for <secs> seconds')
-    .action(function(secs, options){
-        const ms = Number(secs)*1000;
-        const p = sleep(ms);
-        p.then(response => callback(null, response)).catch(error => console.log('error: ', error));;
-    });
-*/
 program
     .command('list-customers')
     .description('lists Project David Customer entities')
@@ -77,17 +63,6 @@ program
     });
 
 program
-    .command('list-invoices')
-    .description('lists Project David Invoices entities')
-    .option('-c, --customer [customerId]', 'customer id (in Project David)')
-    .option('-t, --client [clientId]', 'client id (in Project David)')
-    .option('-i, --id [invoiceId]', 'invoice id (in Project David)')
-    .option('-e, --externalId [externalId]', 'matter id (in local system)')
-    .action(function(options){
-        pdClient.listInvoices(callback, options);
-    });
-
-program
     .command('list-paylinks')
     .description('lists Project David Paylink entities')
     .option('-c, --customer [customerId]', 'customer id (in Project David)')
@@ -106,6 +81,14 @@ program
     .option('-e, --externalId [externalId]', 'customer id in Partner s/w')
     .action(function(options) {
         pdClient.createCustomer(callback, options);
+    });
+
+program
+    .command('onboard-test-customer')
+    .description('updates CC and ACH processing data for testing')
+    .option('-i, --id <customerId>', 'customer id (in Project David)')
+    .action(function(options) {
+        pdClient.onboardTestCustomer(callback, options);
     });
 
 program
@@ -128,17 +111,6 @@ program
     .option('-e, --externalId [externalId]', 'matter id in Partner s/w')
     .action(function(options) {
         pdClient.createMatter(callback, options);
-    });
-
-program
-    .command('create-invoice')
-    .description('creates Invoice entity in Project David')
-    .option('-n, --name <name>', 'invoice name')
-    .option('-t, --client <clientId>', 'client id (in Project David)')
-    .option('-m, --matter <matterId>', 'matter id (in Project David)')
-    .option('-e, --externalId [externalId]', 'invoice id in Partner s/w')
-    .action(function(options){
-        pdClient.createInvoice(callback, options);
     });
 
 program
