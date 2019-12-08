@@ -1,127 +1,153 @@
-# Project David Sample Apps
+# Gravity Legal `cli`
 
-## pdclient
+This is command line tool written in Javascript to explore Gravity Legal APIs. It supports sub-commands like `get`, `create`, `update` etc. on Gravity Legal entities that send HTTP requests to the corresponding endpoints and perform specified operations. More about these entities and operations can be found in _Gravity Legal Partner API Guide_.
 
-This is a REPL (Read-Eval-Print-Loop) tool written in Javascript for Project David developer partners to explore its RESTful APIs. It presents a shell like interface to interact with Project David server. Internally it uses the APIs to create, retrieve and update `Customer`, `Client`, `Matter` and `Paylink` entities and perform other related operations. More about these entities can be found in _Project David Partner API Guide_.
+Please contact Gravity Legal Admin at <admins@gravity-legal.com> to get this guide and a partner account in the Gravity Legal sandbox environment. You would need access to this account to be able to run the `cli` tool.
 
-Please contact Project David Admin at <TBD@gravitypayments.com> to get this guide and a partner account in the Project David sandbox environment.
+*Standard Discalimer: The source code is made available on AS IS basis for understanding purposes only and is not be construed as a recommendation to use a particular architecture, programming language, or library.*
 
-The source code is made available on AS IS basis for understanding purposes only and is not be construed as a recommendation to use a particular architecture, programming language, or library.
-
-### Running The Tool
+## Getting Familiar with the Tool
 
 1. Make sure that you have a fairly recent version of Node (Node 8.10+ will do) on your local machine.
+
 2. Clone the `sampleapps` Git repo, change to the base directory of the tool and install dependencies:
-   ```
-   git clone git@github.com:project-david/sampleapps.git
-   cd sampleapps/pdclient/js
-   npm install
-   ```
-3. The code relies on `dotenv` module to store and access environment variables from `.env` file. You would have got a file containing values specific to your Partner account from Project David admin with a name like `.env.<appId>` where `<appId>` is a unique identifier assigned to your Partner account. Place it unders `pdclient/js` directory, renaming to `.env`.
+   <pre><code>
+   $ <b>git clone git@github.com:project-david/sampleapps.git</b>
+   $ <b>cd sampleapps/cli</b>
+   $ <b>npm install</b>
+   </code></pre>
+
+3. The code relies on [`dotenv` npm module](https://www.npmjs.com/package/dotenv) to store and access environment variables from `.env` file. Login to your Partner Admin account, click on the `Settings` menu item in the left navigation bar, select `API Settings`, generate a new API token if none is there and download the corresponding `.env` file. Place it in your `cli` directory.
+
 4. Now run the tool. `help` lists the various commands supported by the tool and `help <cmd>` shows the options supported by the command. A typical `pdclient` session is shown below (actual output may vary as the tool evolves):
+   
    <pre><code>
-   $ <b>node main.js</b>
-   pdclient> <b>help</b>
-   Usage: pdclient> [options] [command]
+   $ <b>node cli.js -h</b>
+   Usage: node cli.js [options] [command]
 
+   Gravity Legal command line interface tool<br>
    Options:
-     -V, --version                    output the version number
-     -h, --help                       output usage information
-
+     -V, --version              output the version number
+     -h, --help                 output usage information<br>
    Commands:
-    help [cmdName]                   Prints help message.
-    show-messages <on|off>           Show request and response messages
-    list-customers [options]         lists Project David Customer entities
-    list-clients [options]           lists Project David Client entities
-    list-matters [options]           lists Project David Matter entities
-    list-paylinks [options]          lists Project David Paylink entities
-    create-customer [options]        creates Customer entity in Project David
-    onboard-test-customer [options]  updates CC and ACH processing data for testing
-    create-client [options]          creates Client entity in Project David
-    create-matter [options]          creates Client entity in Project David
-    create-paylink [options]         creates Paylink entity in Project David
-    list-customers [options]   lists Project David Customer entities
-
-   pdclient> <b>help list-customers</b>
-   Usage: pdclient> list-customers [options]
-
-   lists Project David Customer entities
-   <i>... snip ...</i>
+     get [options] &lt;entity&gt;     retrieve entity by id or query expr.
+     create [options] &lt;entity&gt;  create entity
+     update [options] &lt;entity&gt;  update entity
+     eop [options] &lt;entity&gt;     invoke entity op
+     iop [options] &lt;entity&gt;     invoke instance op
+     sop [options] &lt;operation&gt;  invoke standalone operation
    </code></pre>
 
-   The next command lists all the Customer entities:
+5. Get help on a specific command:
    <pre><code>
-                         customer id              Name     CC    ACH   Processor 
-    ------------------------------------  ------------  -----  -----  ---------- 
-    deadd845-50a3-4ff0-84b9-854e42c4a711  My Test Firm    YES    YES        mock 
+   $ <b>node cli.js get -h</b>
+   Usage: node cli.js get [options] &lt;entity&gt;
+
+   retrieve entities<br>
+   Options:
+     -i, --id [id]               entity Id
+     -s, --select [cspns]        comma separate property names
+     -q, --query [where_clause]  where clause expression
+     -h, --help                  output usage information
    </code></pre>
 
-   You can also view the raw HTTP messages exchanged by issuing `show-messages on`, as done in the next `create-customer` command:
+6. Run a command:
    <pre><code>
-   pdclient> <b>show-headers on</b>
-   'show-headers: true'
-   pdclient> <b>create-customer -n "XYZ Inc" -e b762ed30-b287-41ab-9d52-a680ae11da37</b>
-   > POST https://okm5wgjc5b.execute-api.us-west-2.amazonaws.com/dev/pd/v1/entities/Customer
-   > Authorization: Bearer eyJhb...-zZBQ
-   > X-PRAHARI-APPID: my-app1
-   > X-PRAHARI-ORGID: 2841558a-b11e-4dc8-a67d-f4c3437e4bcd
-   > Content-Type: application/json
+   $ <b>node cli.js get Customer</b>
    {
-     "name": "XYZ Inc",
-     "externalId": "b762ed30-b287-41ab-9d52-a680ae11da37",
-     "appId": "my-app1"
+     "result": {
+       "records": [
+         ... snip ...
+       ]
+     }
    }
+   </code></pre>
+7. Run a command while displaying request and response headers and messages:
+   <pre><code>
+   $ <b>SHOW_MESSAGES=yes node cli.js get Customer</b>
+   > GET https://api-lambda.dev.project-david.net/pd/v1/entities/Customer
+   > Authorization: Bearer eyJhbG...GXuLu6Y
+   > X-PRAHARI-APPID: tpartnr
+   > X-PRAHARI-ORGID: 01157290-ac52-48ec-ae12-f6b2a2d7d7c3
+   > Content-Type: application/json
 
    < 200 OK
    < content-type=application/json; charset=utf-8
-   < content-length=657
-   ... snip ...
-    {
-        id: '039b3732-5109-4a59-87ac-06dbbfc70fdf',
-        name: 'XYZ Inc',
-        externalId: 'b762ed30-b287-41ab-9d52-a680ae11da37',
-        ... snip ...
-    }
-   pdclient> <b>show-headers off</b>
-   'show-headers: false'
+   < content-length=5718
+   < connection=close
+   < date=Sat, 07 Dec 2019 18:32:07 GMT
+   ...
    </code></pre>
-   Use of external id (external to Project David, internal to partner software) allows the mapping between partner software assigned id to Project David assigned id to be stored within Project David.
+## Getting Things Done
 
+### Listing Firms
+
+Recall that a Firm is represented by `Customer` entity within Gravity Legal.
+
+We already saw in the previous section that the command <b><code>node cli.js get Customer</code></b> lists the customers of the partner.
+
+Shown below are commands to get `Customer`s with different options. Commands for other entities are very similar.
+
+1. Get a specific `Customer` instance by id:
    <pre><code>
-   pdclient> <b>list-customers -e b762ed30-b287-41ab-9d52-a680ae11da37</b>
-   { records: 
-    [ 
-        { 
-            externalId: 'b762ed30-b287-41ab-9d52-a680ae11da37',
-            id: '039b3732-5109-4a59-87ac-06dbbfc70fdf',
-            name: 'XYZ Inc',
-            <i>... snip ...</i>
-        }
-    ]
-    <i>... snip ...</i>
-   }
+   $ <b>node cli.js get Customer -i bb8c380d-19b9-4e11-b893-482fd3206eda</b>
    </code></pre>
 
-   Next, let us create a client and generate a Paylink for the client.
+2. Get `Customer`s by name:
    <pre><code>
-   pdclient> <b>help create-client</b>
-   <i>... snip ...</i>
-   # replace the -c option with a valid customer id in your session
-   pdclient> <b>create-client -f John -l Doe -m "john.doe@gmail.com" -c 039b3732-5109-4a59-87ac-06dbbfc70fdf</b>
-   Client created:  29233d0c-772b-4278-8667-90646b2a35bf
-   # now create a Paylink with $200 for operating account and $100 for the trust account. Note that the amounts are specified as cents
-   pdclient> <b>create-paylink -a 20000 -s 10000 -t a28ac5e1-2c47-46e6-bd2a-796b23ce9201 -c 039b3732-5109-4a59-87ac-06dbbfc70fdf</b>
-   Paylink created:  4e0cc017-3217-422f-829e-0a003bbcb3e4
-   # the output has the link that can be sent to the client for making payment via Credit Card, ACH or Check.
-   pdclient> <b>.exit</b>
+   $ <b>node cli.js get Customer -q "name=My Test Compnay"</b>
    </code></pre>
 
-There are many more commands to create and list Project David entities (_Note: commands to update and remove are coming soon_). 
+*Note: Menu item `Firms` in the Web UI can be used by the partner admin to display and slice-n-dice the list in a visual manner.*
 
-### `pdclient` Source Files
+### Create a Firm
 
-`pdclient` source is in just two files: `main.js` and `PDClient.js`.
+You need only to specify property `name` to create a `Customer` object:
 
-`PDClient.js`: This file has the code for `PDClient` class and it uses `dotenv` module to load the necessary parameters from the `.env` file. Its `init()` sets up the HTTP header `Authorization` with the right credentials and headers `X-PRAHARI-APPID` and `X-PRAHARI-ORGID` with the appropriate values to access the entities belonging to the partner. Bulk of the code deals with forming the request URL and body, invoking the Project David API using `node-fetch` module (Ref: <https://github.com/bitinn/node-fetch>) and processing the response message.
+<pre><code>
+$ <b>node cli.js create Customer -b '{ "name": "My Test Compnay", "externalId": "cus_123456789" }'</b>
+</code></pre>
 
-`main.js`: This sets up the various commands using the built-in `repl` and `commander` (ref: <https://github.com/tj/commander.js/> ) modules. Understanding the code in this file is not required to understand the API invocation mechanism. As you would soon notice, operations on all entities are handled in the same manner. The differences are in filtering parameters (for list operation), input parameters (for create operation) and response messages bodies. *TBD: Update and Remove* operations.*
+Gavity Legal allows multiple `Customer`s with the same value for `name`, so please check the existing ones before issuing this command.
+
+*Note: The same functionality is available via `New Firm` button in the Web UI under `Firms` page.*
+
+You can check the presence of newly created `Customer` either by listing via `cli` or the Web UI.
+
+### Invite a User to Join as Firm Admin
+
+The following command invites a user to join the newly created Firm, identified by its id, by email address as `admin`. Note that it is invoking instance operation `inviteUser` on `Customer` entity.
+
+<pre><code>
+$ <b>node cli.js iop Customer -o inviteUser \
+-i bb8c380d-19b9-4e11-b893-482fd3206eda \
+-b '{"firstName": "Jane", "lastName": "Doe", \
+"email": "jane.doe@example.com", "role": "admin"}'</b>
+</code></pre>
+
+*Known Limitation: A user, i.e; an email address, can be member of only one Firm at a time. One implication of this is that you can not invite the partner admin email address to join a Firm.*
+
+The inbox associated with the email address will receive a welcome message to join Gravity Legal. Follow the instructions and login using either the Google Authetication (if the email address supports that) or entering the email address and password in the welcome message. Once chosen, you must use the same method for subsequent logins.
+
+*You can also invite a user using the Web UI.*
+
+### Create a Client
+
+Creating a `Client` object is straight forward. You need to specify the `Customer` id and property `firstName` in the request body. Value of other properties are optional.
+
+<pre><code>
+$ <b>node cli.js create Client \
+-b '{ "customer": "bb8c380d-19b9-4e11-b893-482fd3206eda", \
+"firstName": "John", "lastName": "Smith", \
+"email": "john.smith@example.com"}'</b>
+</code></pre>
+
+* Select `New Client` in the Web UI in `Clients` page to create a new client.
+
+### Create a Paylink and Add Amount to It
+
+### Transfer from Trust to Operating Account
+
+## `cli` Source Files
+
+`cli.js` source is in just one file: `cli.js`. It makes use of npm module `dotenv` to read environments variables, `commanderjs` to parse commandline options and `node-fetch` to make HTTP calls. The code is fairly straightforward and should be helpful in writing partner system module that interacts with Gravity Legal.

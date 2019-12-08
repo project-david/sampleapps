@@ -1,0 +1,15 @@
+{
+    "name": "gravity-legal-cli",
+    "description": "CLI to explore Gravity Legal API",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/project-david/sampleapps.git"
+    },
+    "version": "0.0.1",
+    "dependencies": {
+        "node-fetch": "^2.6.0",
+        "commander": "^3.0.2",
+        "dotenv": "8.0.0"
+    }
+}
