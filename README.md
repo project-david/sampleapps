@@ -119,10 +119,7 @@ You can check the presence of newly created `Customer` either by listing via `cl
 The following command invites a user to join the newly created Firm, identified by its id, by email address as `admin`. Note that it is invoking instance operation `inviteUser` on `Customer` entity.
 
 <pre><code>
-$ <b>node cli.js iop Customer -o inviteUser \
--i bb8c380d-19b9-4e11-b893-482fd3206eda \
--b '{"firstName": "Jane", "lastName": "Doe", \
-"email": "jane.doe@example.com", "role": "admin"}'</b>
+$ <b>node cli.js iop Customer -o inviteUser -i bb8c380d-19b9-4e11-b893-482fd3206eda -b '{"firstName": "Jane", "lastName": "Doe", "email": "jane.doe@example.com", "role": "admin"}'</b>
 </code></pre>
 
 *Known Limitation: A user, i.e; an email address, can be member of only one Firm at a time. One implication of this is that you can not invite the partner admin email address to join a Firm.*
