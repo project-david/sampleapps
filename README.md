@@ -12,12 +12,12 @@ Please contact Gravity Legal Admin at <admins@gravity-legal.com> to get a partne
 
 2. Clone the `sampleapps` Git repo, change to the base directory and install dependencies:
    <pre><code>
-   $ <b>git clone git@github.com:project-david/sampleapps.git</b>
+   $ <b>git clone https://github.com/project-david/sampleapps.git</b>
    $ <b>cd sampleapps/cli</b>
    $ <b>npm install</b>
    </code></pre>
 
-3. The code relies on [`dotenv` npm module](https://www.npmjs.com/package/dotenv) to store and access environment variables from `.env` file. Login to your Gravity Legal sandbox partner admin account, click on the `Settings` menu item in the left navigation bar, select `API Settings`, generate a new API token if none is there and download the corresponding `.env` file. Place it in your `cli` directory.
+3. The code relies on [`dotenv` npm module](https://www.npmjs.com/package/dotenv) to store and access environment variables from `.env` file. Login to your Gravity Legal sandbox partner admin account, click on the `Settings` menu item in the left navigation bar, generate a new API token by clicking on `New API Token` if none exists, and download the corresponding `.env` file. Place it in your `cli` directory.
 
 4. Now run the tool. `help` lists the various commands supported by the tool and `help <cmd>` shows the options supported by the command. A typical `cli` session is shown below (actual output may vary as the tool evolves):
    
@@ -88,6 +88,7 @@ A few things to note:
 5. Environment variable `SHOW_MESSAGES` allows turning on display of request and response headers and body.
 
 
+
 ## Getting Things Done
 
 ### Listing Firms
@@ -124,7 +125,7 @@ $ <b>node cli.js create Customer -b '{ "name": "My Test Compnay", "externalId": 
 }
 </code></pre>
 
-Gavity Legal allows multiple `Customer`s with the same value for `name`, so please check the existing ones before issuing this command.
+Gavity Legal allows multiple `Customer`s with the same value for `name` or `externalId`, so please check the existing ones before issuing this command.
 
 The above command also uses property `externalId` that could be the Id in the partner system. This Id can be used to retrieve the `Customer` object at a later point in time.
 
@@ -170,7 +171,7 @@ $ <b>node cli.js iop Customer -o inviteUser -i bb8c380d-19b9-4e11-b893-482fd3206
 
 The inbox associated with the email address will receive a welcome message to join Gravity Legal. Follow the instructions and login using either the Google Authetication (if the email address supports that) or entering the email address and password in the welcome message. Once chosen, you must use the same method for subsequent logins.
 
-*Known Limitation: A user identified by an email address can be member of only one Firm at a time. One implication of this is that you can not invite the partner admin email address to join a Firm.*
+*Known Limitation: A user identified by an email address can be member of only one Firm at a time. One implication of this is that you can not invite the partner admin email address to join a Firm. With Google email addresses, you can use `username+subname@domain` to use as many different email addresses you want, all associated with the single Inbox of `username@domain`.*
 
 *You can also invite a user using the Web UI.*
 
@@ -187,7 +188,7 @@ $ <b>node cli.js create Client -b '{ "customer": "bb8c380d-19b9-4e11-b893-482fd3
 
 ### Create a Paylink
 
-A `Paylink` is associated with a `Customer` and one of its `Client`. Optionally, a `Matter` may also be specified (not used here).
+A `Paylink` is associated with a `Customer` and one of its `Client`. Optionally, a `Matter` may also be specified (not specified here).
 
 <pre><code>
 $ <b>node cli.js create Paylink -b '{ "customer": "e99eff21-64c8-43aa-97c7-5bc2530bcce5", \
@@ -233,6 +234,51 @@ $ <b>node cli.js sop trustToOperatingTransfer -b '{ "customer": "e99eff21-64c8-4
     "success": true
   }
 }
+</code></pre>
+
+## Using Curl
+
+You can get the feel of the API by also using command line tool [`curl`](https://curl.haxx.se/). This requires specifying the traget URL and HTTP headers as `curl` options. The first step is to set the environment variables `ENV_URL`, `SYSTEM_TOKEN`, `APP_ID` and `ORG_ID` with values in the `.env` file.
+
+Find below examples with `curl`. Use OS specific env. var. expansion expressions for non-Unix platforms.
+
+These are also indicative of how to use any programming language to make Gravity Legal API calls.
+
+Get all `Customer`s :
+
+<pre><code>
+curl -H "Authorization: Bearer $SYSTEM_TOKEN" -H "X-PRAHARI-APPID: $APP_ID" -H "X-PRAHARI-ORGID: $ORG_ID" $ENV_URL/entities/Customer
+</code></pre>
+
+Get one `Customer` by `id`:
+
+<pre><code>
+curl -H "Authorization: Bearer $SYSTEM_TOKEN" -H "X-PRAHARI-APPID: $APP_ID" -H "X-PRAHARI-ORGID: $ORG_ID" $ENV_URL/entities/Customer/bb8c380d-19b9-4e11-b893-482fd3206eda
+</code></pre>
+
+Get one `Customer` by `externalId`:
+
+<pre><code>
+curl -H "Authorization: Bearer $SYSTEM_TOKEN" -H "X-PRAHARI-APPID: $APP_ID" -H "X-PRAHARI-ORGID: $ORG_ID" $ENV_URL/entities/Customer?externalId=cus_123456789
+</code></pre>
+
+Update `Customer.name` (note the use of `PATCH` method, header `Content-Type` and JSON request body):
+
+<pre><code>
+curl -X PATCH -H "Content-Type: application/json" -H "Authorization: Bearer $SYSTEM_TOKEN" -H "X-PRAHARI-APPID: $APP_ID" -H "X-PRAHARI-ORGID: $ORG_ID" -d '{"name": "New Test Company" }' $ENV_URL/entities/Customer/bb8c380d-19b9-4e11-b893-482fd3206eda
+</code></pre>
+
+Create `Client` for a `Customer` (note the use of `POST` method, header `Content-Type` and JSON request body):
+
+<pre><code>
+curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $SYSTEM_TOKEN" -H "X-PRAHARI-APPID: $APP_ID" -H "X-PRAHARI-ORGID: $ORG_ID" -d '{ "customer": "bb8c380d-19b9-4e11-b893-482fd3206eda", "firstName": "John", "lastName": "Smith", "email": "john.smith@example.com"}' $ENV_URL/entities/Client
+</code></pre>
+
+Create `Paylink` and add amount (note use of instance operation):
+<pre><code>
+curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $SYSTEM_TOKEN" -H "X-PRAHARI-APPID: $APP_ID" -H "X-PRAHARI-ORGID: $ORG_ID" -d '{ "customer": "bb8c380d-19b9-4e11-b893-482fd3206eda", "client": "2b2c3bea-e139-483e-bb36-4a3a00158dd4"}' $ENV_URL/entities/Paylink
+
+curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $SYSTEM_TOKEN" -H "X-PRAHARI-APPID: $APP_ID" -H "X-PRAHARI-ORGID: $ORG_ID" -d '{ "trust": { "amount": 100000 }, "operating": { "amount": 20000 } }' $ENV_URL/entities/Paylink/9fb8942b-6180-44a7-93be-a9af5e956209/addToPaylink
 </code></pre>
 
 ## `cli` Source Files

@@ -71,7 +71,9 @@ program
 
 
 program.parse(process.argv);
-
+if (program.args.length === 0) {
+    program.help();
+}
 // Helper classes and functions
 async function http(method, url, body) {
     if (GlobalOptions.showMessages) showRequestMessage(method, url, GlobalOptions.headers, body);
