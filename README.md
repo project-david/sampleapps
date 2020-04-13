@@ -284,3 +284,41 @@ curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $SYST
 ## `cli` Source Files
 
 `cli.js` source is in just one file: `cli.js`. It makes use of npm module `dotenv` to read environments variables, `commanderjs` to parse commandline options and `node-fetch` to make HTTP calls. The code is fairly straightforward and should be helpful in writing partner system module that interacts with Gravity Legal, either in Javascript or any other language.
+
+# Gravity Legal `webhook-listener`
+
+Gravity Legal supports asynchronous notifications of events of interest such as payment by client via a signed HTTP POST message to configured webhook URL.
+
+The Webhook listener program `webhook-listener/server.js` is a very basic nodejs program that listens for HTTP requests, prints the request headers, body and signature verification result. Although you can run this server on your laptop behind home or office firewall, Gravity Legal server cannot do an HTTP POST there directly. One way out is to run [`ngrok`](https://ngrok.io) locally and let it forward the notification message to the local server.
+
+Run the server on port 6000 and use the string `MySecret` as the signing key (you must use something more obscure in production):
+
+```
+$ <b>cd webhook-listener</b>
+$ PORT=6000 SECRET_KEY=MySecret node server.js
+Server is listening on 6000 ...
+```
+Download `ngrok` executable from https://ngrok.io and run in a different terminal window:
+```
+$ ngrok http 6000
+ngrok by @inconshreveable                                                                                                                                (Ctrl+C to quit)
+...snip ...
+
+Forwarding         http://c1eb5703.ngrok.io -> localhost:6000
+Forwarding         https://c1eb5703.ngrok.io -> localhost:6000   
+```
+Now you can set the Webhook URL in Gravity Legal Partner Settings page to https://c1eb5703.ngrok.io/accept .
+
+The output of the server program when a payment is made:
+```
+Message Received::
+POST /accept
+Headers: {
+  'x-prahari-signature': 'JAU...Qtg==',
+  'content-type': 'application/json',
+  ... snip ...
+  host: 'c1eb5703.ngrok.io'
+}
+Body: {"eventType":"CLIENT_PAYMENT","generatedAt":"2020-04-13T06:17:44.878Z","eventBody":{"paylinkId":"b0f8b0c3-4d73-42d2-bf6b-4d32ce958af1","method":"CC"}}
+Signature verification result: true
+```
